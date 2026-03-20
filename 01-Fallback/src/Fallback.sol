@@ -29,11 +29,9 @@ contract Fallback {
     }
 
     function withdraw() public onlyOwner {
-        // @audit-issue -> transfer method deprecated
         payable(owner).transfer(address(this).balance);
     }
 
-    // @audit-critical-issue -> ownership can be stolen sending ETH
     receive() external payable {
         require(msg.value > 0 && contributions[msg.sender] > 0);
         owner = msg.sender;

